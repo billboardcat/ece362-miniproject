@@ -12,7 +12,7 @@ int offset = 0;
 
 int stepC = 554.365 * N / RATE * (1<<16);
 int stepF = 698.456 * N / RATE * (1<<16);
-int tone_step = stepC;
+int tone_step;
 
 void init_wavetable();
 void setup_dac_gpio();
