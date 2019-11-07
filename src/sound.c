@@ -12,8 +12,15 @@ int offset = 0;
 
 int stepC = 554.365 * N / RATE * (1<<16);
 int stepF = 698.456 * N / RATE * (1<<16);
+int tone_step = stepC;
 
 void init_wavetable();
+void setup_dac_gpio();
+void init_wavetable();
+void setup_timer6();
+void setup_dac();
+void set_note(char note);
+
 void init_wavetable()
 {
   int x;
@@ -21,8 +28,18 @@ void init_wavetable()
     wavetable[x] = 32767 * sin(2 * M_PI * x / N);
 }
 
+// This function
+// 1) enables clock to port A,
+// 2) sets PA4 to analog mode 11
+void setup_dac_gpio() {
+    /* Student code goes here */
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+	GPIOA->MODER |= 0x300;
+}
 
-void setup_dac();
+// This function should enable the clock to the
+// onboard DAC, enable trigger,
+// setup software trigger and finally enable the DAC.
 void setup_dac() {
     /* Student code goes here */
 	RCC->APB1ENR |= RCC_APB1ENR_DACEN;
@@ -33,17 +50,28 @@ void setup_dac() {
 	DAC->CR |= DAC_CR_EN1; //enable
 
 }
+// This function should,
+// enable clock to timer6,
+// setup pre scalar and arr so that the interrupt is triggered 100us,
+// enable the timer 6 interrupt and start the timer.
+void setup_timer6() {
+    /* Student code goes here */
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+	TIM6->ARR = 48-1;
+	TIM6->PSC = 10-1;
+	TIM6->DIER |= TIM_DIER_UIE;
+	TIM6->CR1 |= TIM_CR1_CEN;
+
+	NVIC->ISER[0] = 1<<TIM6_DAC_IRQn;
+}
 void TIM6_DAC_IRQHandler() {
     /* Student code goes here */
 	DAC->SWTRIGR |= DAC_SWTRIGR_SWTRIG1; //trigger the conversion
 	TIM6->SR &= ~TIM_SR_UIF; //ack interrupt
 
-
-
-
 	//step 1 code - 6.3
-	/*
-	offset += step;
+
+	offset += tone_step;
 	if((offset>>16) >= N)//if past end of array
 	{
 		offset -= N<<16;
@@ -52,52 +80,21 @@ void TIM6_DAC_IRQHandler() {
 	int sample = wavetable[offset>>16];
 	sample = sample /16 +2048;
 	DAC->DHR12R1 = sample;
-	*/
 
+}
 
+//TODO need to fill with all possible note
+//takes in char (capital letter) for note to play - switches global step variable to correct step freq.
+void set_note(char note){
+	switch(note){
+	case 'C':
+		tone_step = stepC;
+		break;
+	case 'F':
+		tone_step = stepF;
+		break;
 
-	//step 2 code - 6.4
-	/*
-	offset1 += stepC;
-	if((offset1>>16) >= N)//if past end of array
-	{
-		offset1 -= N<<16;
+	default:
+		tone_step = stepC;
 	}
-	offset2 += stepF;
-	if((offset2>>16) >= N)//if past end of array
-	{
-		offset2 -= N<<16;
-	}
-	int sample = 0;
-	sample += wavetable[offset1>>16];
-	sample += wavetable[offset2>>16];
-
-	sample = sample /32 +2048;
-	if(sample > 4095) sample = 0; //clip
-	DAC->DHR12R1 = sample;
-	*/
-
-
-	//step 3 code - 6.5
-
-	offset1 += step0;
-	if((offset1>>16) >= N)//if past end of array
-	{
-		offset1 -= N<<16;
-	}
-	offset2 += step1;
-	if((offset2>>16) >= N)//if past end of array
-	{
-		offset2 -= N<<16;
-	}
-	int sample = 0;
-	sample += wavetable[offset1>>16];
-	sample += wavetable[offset2>>16];
-
-	sample = sample /32 +2048;
-	if(sample > 4095) sample = 0; //clip
-	else if(sample < 0) sample =0; //clip
-	DAC->DHR12R1 = sample;
-
-
 }
