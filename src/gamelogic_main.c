@@ -168,20 +168,20 @@ void circdma_display2(const char *s) {
 	}
 }
 
-void init_tim6(void) {
+void init_tim2(void) {
     // Your code goes here.
-	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-	TIM6->ARR = 100-1;
-	TIM6->PSC = 480-1;
-	TIM6->DIER |= TIM_DIER_UIE;
-	TIM6->CR1 |= TIM_CR1_CEN;
-	NVIC->ISER[0] = 1 << TIM6_DAC_IRQn;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+	TIM2->ARR = 100-1;
+	TIM2->PSC = 480-1;
+	TIM2->DIER |= TIM_DIER_UIE;
+	TIM2->CR1 |= TIM_CR1_CEN;
+	NVIC->ISER[0] = 1 << TIM2_IRQn;
 }
 
-void TIM6_DAC_IRQHandler() {
+void TIM2_IRQHandler() {
 	// Your code goes here.
-	TIM6->SR &= ~TIM_SR_UIF;
-	countdown(); //THIS WAS THERE
+	TIM2->SR &= ~TIM_SR_UIF;
+	countdown();
 }
 
 int main(void)

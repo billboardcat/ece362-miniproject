@@ -190,7 +190,7 @@ void congrats(int winner) {
 int round_cnt = 0;
 int points[2] = {0};
 int score_update = 0;
-int turn = 1;
+int turn = 1; // 0 if player 1 is entering pattern and 2 is guessing, 1 if p1 is guessing
 
 volatile int count = 0;
 volatile int num_pressed = 0;
@@ -411,7 +411,7 @@ void countdown() {
 		sprintf(new_line, "# Guessed : %d ", num_pressed);
 		display1(new_line);
 		if (num_pressed == 5) {
-			check_and_score(pattern_accuracy, count, turn);
+			check_and_score(pattern_accuracy, count, turn); //TODO: pattern accuracy is return of pattern matching fuction
 		}
     }
 }
@@ -424,7 +424,7 @@ void trigger_count(void) {
     display1 = circdma_display1;
     display2 = circdma_display2;
     // Initialize timer 6.
-    init_tim6();
+    init_tim2();
     // Initialize the display.
     dma_spi_init_lcd();
     count = 0;
