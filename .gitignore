@@ -127,3 +127,5 @@ CMSIS/core/core_cm3.h
 CMSIS/core/core_cm0.h
 CMSIS/core/arm_math.h
 CMSIS/core/arm_common_tables.h
+.DS_Store
+src/.DS_Store
