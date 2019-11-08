@@ -12,8 +12,8 @@ short int wavetable[N];
 int offset = 0;
 int sound_on_off; //1 = on, 0 = off
 
-int stepC = 554.365 * N / RATE * (1<<16);
-int stepD = 554.365 * N / RATE * (1<<16);
+int stepC = 523.251 * N / RATE * (1<<16);
+int stepD = 587.330 * N / RATE * (1<<16);
 int stepE = 659.2551 * N / RATE * (1<<16);
 int stepF = 698.4565 * N / RATE * (1<<16);
 int stepG = 783.9909 * N / RATE * (1<<16);
@@ -143,13 +143,4 @@ void init_beep(){
 	setup_dac();
 	setup_timer6();
 	set_note('C');
-}
-
-//=========================================================================
-// An inline assembly language version of nano_wait.
-//=========================================================================
-void nano_wait(unsigned int n) {
-    asm(    "        mov r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
 }

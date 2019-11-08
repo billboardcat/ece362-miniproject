@@ -1,4 +1,5 @@
 #include "btn_funs.h"
+#include "sound.h"
 #include "stm32f0xx.h"
 #include "stm32f0_discovery.h"
 
@@ -7,9 +8,10 @@ int col = 0;
 
 /* Usage:
  * 1. void init_btns(void)
- * 		-- Initializes GPIOC pins 0-5
+ * 		-- Initializes GPIOC pins 0-10
  * 		-- PC0 is sent to all buttons
  * 		-- PC1-5 is read through; when a button is pushed, the corresponding input goes high
+ * 		-- PC6-10 are set to output
  * 2. void setup_tim3(void)
  * 		-- initializes TIMER3 to generate interrupts
  * 3. int get_btn_pressed(void)
@@ -42,7 +44,25 @@ void init_btns(void) {
 
 int get_btn_pressed(void) {
 	int key = get_btn_press();
-	while (key != get_btn_release());
+	switch (key) {
+		case 0:
+			play_note('C');
+			break;
+		case 1:
+			play_note('D');
+			break;
+		case 2:
+			play_note('E');
+			break;
+		case 3:
+			play_note('F');
+			break;
+		case 4:
+			play_note('G');
+			break;
+	}
+	while (key != get_btn_release()) {}
+	stop_note();
 	return key;
 }
 
