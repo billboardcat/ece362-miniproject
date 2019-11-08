@@ -25,5 +25,5 @@ void circdma_display2(const char *);
 void spi_init_lcd(void);
 void dma_spi_init_lcd(void);
 
-void init_tim6(void);
+void init_tim2(void);
 void play_pattern(int turn);
