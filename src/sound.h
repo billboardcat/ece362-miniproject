@@ -14,5 +14,9 @@ void init_wavetable();
 void setup_timer6();
 void setup_dac();
 void set_note(char note);
+void play_note(char note);
+void stop_note();
+void init_beep();
+void nano_wait(unsigned int n);
 
 #endif /* SOUND_H_ */
