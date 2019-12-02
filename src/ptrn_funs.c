@@ -13,9 +13,9 @@ void get_ptrn10(int* ptrn) {
 void ret_ptrn(int* ptrn, int size) {
 	for (int ind = 0; ind < size; ind++) {
 		set_led(ptrn[ind]);
-		nano_wait(500000000);
+		nano_wait(5000000);
 		clr_led(ptrn[ind]);
-		nano_wait(500000000);
+		nano_wait(5000000);
 	}
 }
 

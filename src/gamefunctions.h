@@ -1,11 +1,14 @@
+#ifndef GAMEFUNCTIONS_H
+#define GAMEFUNCTIONS_H
+
 void generic_lcd_startup(void);
 void countdown();
 void congrats(int winner);
 void step2(void);
-void enter_pattern(int turn);
-void step4(int pattern, int time, int turn);
+void enter_pattern();
+void check_and_score(int pattern, int time);
 void step6(void);
-void play_pattern(int turn);
+void play_pattern();
 void round_counter(void);
 
 extern void (*cmd)(char b);
@@ -25,5 +28,8 @@ void circdma_display2(const char *);
 void spi_init_lcd(void);
 void dma_spi_init_lcd(void);
 
-void init_tim2(void);
-void play_pattern(int turn);
+//void init_tim6(void);
+
+void scrolling_msg();
+
+#endif

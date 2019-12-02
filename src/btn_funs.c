@@ -2,6 +2,7 @@
 #include "sound.h"
 #include "stm32f0xx.h"
 #include "stm32f0_discovery.h"
+#include "led_funs.h"
 
 int8_t history[5] = {0};
 int col = 0;
@@ -44,6 +45,7 @@ void init_btns(void) {
 
 int get_btn_pressed(void) {
 	int key = get_btn_press();
+	set_led(key);
 	switch (key) {
 		case 0:
 			play_note('C');
@@ -63,6 +65,7 @@ int get_btn_pressed(void) {
 	}
 	while (key != get_btn_release()) {}
 	stop_note();
+	clr_led(key);
 	return key;
 }
 

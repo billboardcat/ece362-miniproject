@@ -128,3 +128,14 @@ CMSIS/core/core_cm0.h
 CMSIS/core/arm_math.h
 CMSIS/core/arm_common_tables.h
 .DS_Store
+proj Run.cfg
+Debug/src/sound.o
+Debug/src/sound.d
+Debug/src/ptrn_funs.o
+Debug/src/ptrn_funs.d
+Debug/src/led_funs.o
+Debug/src/led_funs.d
+Debug/src/gamefunctions.o
+Debug/src/gamefunctions.d
+Debug/proj.elf
+Debug/proj.bin

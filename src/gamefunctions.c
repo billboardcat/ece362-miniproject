@@ -3,23 +3,17 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "gamefunctions.h"
+#include "btn_funs.h"
 
 #define SPI_DELAY 1337
 
-// Extern declarations of function pointers in main.c.
-//=========================================================================
-// An inline assembly language version of nano_wait.
-//=========================================================================
-void nano_wait(unsigned int n) {
-    asm(    "        mov r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
-}
+extern int ptrn[10] = {0};
+extern int ptrn2[10] = {0};
 
 //=========================================================================
 // Generic subroutine to configure the LCD screen.
 //=========================================================================
-void generic_lcd_startup(void) {
+ void generic_lcd_startup(void) {
     nano_wait(100000000); // Give it 100ms to initialize
     cmd(0x38);  // 0011 NF00 N=1, F=0: two lines
     cmd(0x0c);  // 0000 1DCB: display on, no cursor, no blink
@@ -190,7 +184,7 @@ void congrats(int winner) {
 int round_cnt = 0;
 int points[2] = {0};
 int score_update = 0;
-int turn = 1; // 0 if player 1 is entering pattern and 2 is guessing, 1 if p1 is guessing
+extern volatile int turn = 1; // 0 if player 1 is entering pattern and 2 is guessing, 1 if p1 is guessing
 
 volatile int count = 0;
 volatile int num_pressed = 0;
@@ -204,6 +198,7 @@ void round_counter() {
 	dma_spi_init_lcd();
 	turn = 0;
 	round_cnt = round_cnt + 1;
+
 	if (round_cnt == 1) {
 		//welcome message and announce round 1
 		display1("JUST SIMON");
@@ -242,7 +237,45 @@ void round_counter() {
 
 }
 
-void play_pattern(int turn) {
+// switching turns to enter a pattern
+void enter_pattern() {
+    // Configure the function pointers.
+    cmd = spi_cmd;
+    data = spi_data;
+
+//    display1 = nondma_display1;
+//	display2 = nondma_display2;
+//    spi_init_lcd();
+
+    display1 = circdma_display1;
+	display2 = circdma_display2;
+	// Initialize the display.
+	dma_spi_init_lcd();
+
+    int buttons = 0;
+    char btn_msg[20];
+
+    init_tim15();
+
+    int ind = 0;
+    while(ind < 10) {
+    	sprintf(btn_msg, "# Entered : %d ", ind); // Fist display num of buttons pressed
+    	display1(btn_msg);
+
+		ptrn[ind] = get_btn_pressed();
+		ind++; //add a conditional here for button press
+
+		sprintf(btn_msg, "# Entered : %d ", ind);
+		display1(btn_msg);
+    }
+
+    nano_wait(50000000);
+    RCC->APB2ENR &= ~RCC_APB2ENR_TIM15EN;
+
+    play_pattern(turn);
+}
+
+void play_pattern() {
 	cmd = spi_cmd;
 	data = spi_data;
 	display1 = circdma_display1;
@@ -250,74 +283,33 @@ void play_pattern(int turn) {
 	// Initialize the display.
 	dma_spi_init_lcd();
 
-	int counter = 0;
-	//if turn is 0, then player 2 should be guessing
-	//if turn is 1, then player 1 should be guessing
 	if (turn == 1) {
-		while(counter <= 10) { //while light pattern is playing
+		for (int i = 0; i < 10; i++) {
 			display1("Player 1,");
 			display2("Watch pattern!");
+			set_led(ptrn[i]);
 			nano_wait(100000000);
-			counter++;
+			clr_led(ptrn[i]);
+			nano_wait(100000000);
 		}
 	}
-	else { //turn is 0, so player 2 is guessing
-		while(counter <= 10) {
+	else {
+		for (int i = 0; i < 10; i++) {
 			display1("Player 2,");
 			display2("Watch pattern!");
+			set_led(ptrn[i]);
 			nano_wait(100000000);
-			counter++;
+			clr_led(ptrn[i]);
+			nano_wait(100000000);
 		}
 	}
 
 	count = 0;
 	num_pressed = 0;
 	trigger_count();
-
 }
 
-
-// switching turns to enter a pattern
-void enter_pattern(int turn) {
-    // Configure the function pointers.
-    cmd = spi_cmd;
-    data = spi_data;
-    display1 = nondma_display1;
-    display2 = nondma_display2;
-    // Initialize the display using the SPI init function.
-    spi_init_lcd();
-    // Display something simple.
-    int offset = 0;
-    int buttons = 0;
-    const char *msgp1 = "          Player 1, enter a pattern!            ";
-    const char *msgp2 = "          Player 2, enter a pattern!            ";
-    char btn_msg[20];
-
-    while(buttons <= 50) {
-    if (turn == 0) { //player 1's turn now to enter a pattern
-    	display2(&msgp1[offset]);
-    	nano_wait(100000000);
-    	offset += 1;
-    	if (offset == 32)
-    		offset = 0;
-    }
-    else { //turn = 1, player 2's turn to enter a pattern
-    	display2(&msgp2[offset]);
-    	nano_wait(100000000);
-    	offset += 1;
-    	if (offset == 32)
-    	    offset = 0;
-    }
-    sprintf(btn_msg, "# Entered: %d ", buttons);
-    display1(btn_msg);
-    buttons++; //add a conditional here for button press
-    }
-
-    play_pattern(turn);
-}
-
-
-void check_and_score(int pattern, int time, int turn) { //pattern (1 for right 0 for wrong), turn (0 for p1, 1 for p2)
+void check_and_score(int pattern, int time) { //pattern (1 for right 0 for wrong), turn (0 for p1, 1 for p2)
 	//for some reason, turn always seems to be 1 in this function.
 	//turn 0 means score is added to player 2, since he or she is the guesser
 
@@ -336,6 +328,7 @@ void check_and_score(int pattern, int time, int turn) { //pattern (1 for right 0
 
     if (pattern == 1) {
     	score = score + 300 / time;
+//    	score = score + 10;
     }
 
     if (score_update == 1) { //need to update player 1's score.
@@ -355,7 +348,6 @@ void check_and_score(int pattern, int time, int turn) { //pattern (1 for right 0
         turn = 0;
     }
 
-    //points[turn] = points[turn] + score;
 
     int offset = 0;
     while (flash_ten < 10) {
@@ -371,7 +363,6 @@ void check_and_score(int pattern, int time, int turn) { //pattern (1 for right 0
         }
 
         sprintf(score_message, "Total score: %d ", points[ind]);
-        //sprintf(score_message, "score: %d %d ", points[0], points[1]);
         display2(score_message);
 
         nano_wait(100000000);
@@ -397,21 +388,39 @@ int calls = 0;
 int pattern_accuracy = 1;
 
 void countdown() {
-    char line[20];
-    char new_line[20];
+    char cd_line1[20];
+    char cd_line2[20];
     calls++;
     if(calls == 1000) {
     	calls = 0;
-		if(count >= 0) {
+    	if (count >= 0) {
 			count++;
 		}
-		num_pressed++; //put a condition here to check if button has been pressed
-		sprintf(line, "Timer : %d ", count);
-		display2(line);
-		sprintf(new_line, "# Guessed : %d ", num_pressed);
-		display1(new_line);
-		if (num_pressed == 5) {
-			check_and_score(pattern_accuracy, count, turn); //TODO: pattern accuracy is return of pattern matching fuction
+		sprintf(cd_line2, "Timer : %d ", count);
+		display2(cd_line2);
+    }
+}
+
+int msgoffset = 0;
+int calls2 = 0;
+
+void scrolling_msg() {
+	const char *msgp1 = "                  Player 1, enter a pattern!                  ";
+	const char *msgp2 = "                  Player 2, enter a pattern!                  ";
+    calls2++;
+    if(calls2 == 100) {
+    	calls2 = 0;
+		if (turn == 0) { // Line 2's patter: indicated which player is inputting pattern
+			display2(&msgp1[msgoffset]);
+			msgoffset += 1;
+			if (msgoffset == 45)
+				msgoffset = 0;
+		}
+		else { //turn = 1, player 2's turn to enter a pattern
+			display2(&msgp2[msgoffset]);
+			msgoffset += 1;
+			if (msgoffset == 45)
+				msgoffset = 0;
 		}
     }
 }
@@ -431,4 +440,34 @@ void trigger_count(void) {
     num_pressed = 0;
     display1(line1);
     display2(line2);
+
+    int i = 0;
+    char cd_line1[20];
+    while (i < 10) {
+    	ptrn2[i] = get_btn_pressed();
+    	sprintf(cd_line1, "# Guessed : %d ", i);
+		display1(cd_line1);
+		i++;
+		sprintf(cd_line1, "# Guessed : %d ", i);
+		display1(cd_line1);
+    }
+
+    nano_wait(50000000);
+
+    pattern_accuracy = 1;
+
+	for (int i = 0; i < 10; i++) {
+		if (ptrn[i] != ptrn2[i]) {
+			pattern_accuracy = 0;
+		}
+	}
+
+	RCC->APB1ENR &= ~RCC_APB1ENR_TIM2EN;
+
+	check_and_score(pattern_accuracy, count);
+}
+
+void TIM15_IRQHandler() {
+	TIM15->SR &= ~TIM_SR_UIF;
+	scrolling_msg();
 }
